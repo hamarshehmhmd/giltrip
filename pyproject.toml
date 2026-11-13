@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "giltrip"
+version = "0.1.0"
+description = "Find every extension module that turns the GIL back on in free-threaded Python (3.13t/3.14t/3.15t), which package it came from, and the line of your code that imported it."
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{name = "Mohammad Hamarsheh"}]
+requires-python = ">=3.9"
+dependencies = ["tomli>=1.1; python_version < '3.11'"]
+keywords = ["free-threading", "nogil", "gil", "python", "cpython", "free-threaded", "3.14t", "pep-703", "ci"]
+classifiers = [
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: Free Threading :: 2 - Beta",
+  "Topic :: Software Development :: Quality Assurance",
+  "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Homepage = "https://github.com/hamarshehmhmd/giltrip"
+Issues = "https://github.com/hamarshehmhmd/giltrip/issues"
+
+[project.scripts]
+giltrip = "giltrip.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+giltrip = ["_shim/*.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

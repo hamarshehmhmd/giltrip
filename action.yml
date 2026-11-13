@@ -1,0 +1,49 @@
+name: giltrip
+description: Fail (or warn) when an import re-enables the GIL on free-threaded Python, and say which package and line did it.
+author: Mohammad Hamarsheh
+branding:
+  icon: unlock
+  color: orange
+inputs:
+  python:
+    description: Free-threaded interpreter to check (path, venv dir, or e.g. 3.14t). Default - the python on PATH.
+    required: false
+    default: ""
+  command:
+    description: Command to watch with `giltrip run` (e.g. "python -m pytest -q"). Leave empty to `giltrip scan` the environment instead.
+    required: false
+    default: ""
+  fail:
+    description: Fail the step when something re-enables the GIL.
+    required: false
+    default: "true"
+  args:
+    description: Extra giltrip arguments (e.g. "--allow lxml --online").
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: install giltrip
+      shell: bash
+      run: python -m pip install -q "$GITHUB_ACTION_PATH"
+    - name: giltrip
+      shell: bash
+      env:
+        GT_PYTHON: ${{ inputs.python }}
+        GT_COMMAND: ${{ inputs.command }}
+        GT_FAIL: ${{ inputs.fail }}
+        GT_ARGS: ${{ inputs.args }}
+      run: |
+        set -u
+        py=()
+        if [ -n "$GT_PYTHON" ]; then py=(--python "$GT_PYTHON"); else py=(--python "$(command -v python)"); fi
+        if [ -n "$GT_COMMAND" ]; then
+          fail=(); [ "$GT_FAIL" = "true" ] && fail=(--fail)
+          # shellcheck disable=SC2086
+          python -m giltrip run "${fail[@]}" $GT_ARGS -- bash -c "$GT_COMMAND"
+        else
+          zero=(); [ "$GT_FAIL" = "true" ] || zero=(--exit-zero)
+          # shellcheck disable=SC2086
+          python -m giltrip scan "${py[@]}" "${zero[@]}" $GT_ARGS
+        fi

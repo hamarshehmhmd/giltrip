@@ -1,0 +1,103 @@
+name: CI
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    name: tests (host ${{ matrix.python }}, target ${{ matrix.ft }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+        ft: ["3.14t"]
+        include:
+          - os: ubuntu-24.04
+            python: "3.9"
+            ft: "3.14t"
+          - os: ubuntu-latest
+            python: "3.13"
+            ft: "3.15t"
+          - os: ubuntu-latest
+            python: "3.13"
+            ft: "3.13t"
+          - os: macos-latest
+            python: "3.13"
+            ft: "3.14t"
+          - os: windows-latest
+            python: "3.13"
+            ft: "3.14t"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        id: ft
+        with:
+          python-version: ${{ matrix.ft }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: ${{ steps.ft.outputs.python-path }} -m pip install -q pytest
+      - run: python -m pip install . pytest
+      - name: pytest
+        shell: bash
+        env:
+          GILTRIP_TEST_PYTHON: ${{ steps.ft.outputs.python-path }}
+          GILTRIP_REQUIRE_FT: "1"
+        run: python -m pytest -q -rs
+
+  real-world:
+    name: real packages (lxml re-enables the GIL, msgpack doesn't)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.14t
+      - run: python -m venv /tmp/ft && /tmp/ft/bin/python -m pip install -q lxml msgpack
+      - run: python -m pip install -q .
+      - name: scan finds lxml and not msgpack
+        run: |
+          set +e
+          giltrip scan --python /tmp/ft --format json > scan.json; rc=$?
+          set -e
+          test "$rc" = 1
+          python - <<'PY'
+          import json
+          rep = json.load(open("scan.json"))
+          dists = {c["dist"] for c in rep["culprits"]}
+          print("culprits:", sorted(c["module"] for c in rep["culprits"]))
+          assert "lxml" in dists, dists
+          assert "msgpack" not in dists, dists
+          PY
+      - name: action, scan mode with lxml allowed
+        uses: ./
+        with:
+          python: /tmp/ft
+          args: --allow lxml
+      - name: action, run mode (warn only)
+        uses: ./
+        with:
+          command: /tmp/ft/bin/python -c "import msgpack, lxml.etree"
+          fail: "false"
+
+  install-script:
+    name: one-line install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - run: GILTRIP_REF=${{ github.sha }} sh install.sh
+      - run: |
+          export PATH="$HOME/.local/bin:${PIPX_BIN_DIR:-/opt/pipx_bin}:$PATH"
+          giltrip --version
+          giltrip scan --python "$(command -v python3)" 2>&1 | grep -q "needs a free-threaded Python"
