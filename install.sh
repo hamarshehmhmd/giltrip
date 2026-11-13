@@ -38,3 +38,7 @@ EXE="$BIN/giltrip"
 [ -x "$EXE" ] || EXE="$(command -v giltrip || true)"
 [ -n "$EXE" ] && [ -x "$EXE" ] || die "install finished but the giltrip command was not found"
 say "installed $("$EXE" --version) at $EXE"
+case ":$PATH:" in
+  *":$(dirname "$EXE"):"*) ;;
+  *) say "add $(dirname "$EXE") to your PATH to run giltrip from anywhere" ;;
+esac
