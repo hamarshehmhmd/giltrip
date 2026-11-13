@@ -141,7 +141,7 @@ def test_run_fail_flag_and_exit_code_passthrough(ftpy, site, app):
 
 
 def test_run_clean_program(ftpy, site, app):
-    a = app("import fixpkg.gilfree, json, _decimal\n")
+    a = app("import fixpkg.gilfree, json, math\n")
     r = run_cli("run", "--fail", "--", ftpy, a, env={"PYTHONPATH": str(site)})
     assert r.returncode == 0 and "OK: nothing here turns the GIL back on." in r.stdout
 
