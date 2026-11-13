@@ -1,8 +1,9 @@
 """Import extension modules in a fresh free-threaded interpreter with -v and read what CPython says.
 
-CPython prints "# loading module 'X', which requires the GIL" (with -v) for *every* extension
+CPython prints "# loading module 'X', which requires the GIL" (with -v) for every extension
 module that hasn't declared Py_mod_gil = Py_MOD_GIL_NOT_USED, not only the first one that flips
-the GIL on. That is what lets one process find all of them.
+the GIL on (3.15 prints the RuntimeWarning instead of that line for the first one). That is what
+lets one process find all of them.
 """
 import json
 import re
@@ -13,6 +14,8 @@ from .interp import PROBE, child_env
 
 MARK = "@@giltrip@@"
 GIL_LINE = re.compile(r"^# loading module '([^']+)', which requires the GIL")
+# 3.15 prints only the RuntimeWarning (not the -v line) for the module that actually flips the GIL on
+GIL_WARN = re.compile(r"RuntimeWarning: The global interpreter lock \(GIL\) has been enabled to load module '([^']+)'")
 NOT_EXT = ("does not define module export function", "dynamic module does not define")
 
 
@@ -25,7 +28,7 @@ def parse_log(text):
     finished = False
     gil_end = None
     for line in text.splitlines():
-        m = GIL_LINE.match(line)
+        m = GIL_LINE.match(line) or GIL_WARN.search(line)
         if m:
             culprits.setdefault(m.group(1), current)
             continue
@@ -56,7 +59,7 @@ def parse_log(text):
 
 def _run_batch(python, names, paths, timeout):
     req = json.dumps({"names": names, "paths": list(paths)})
-    cmd = [python, "-P", "-v", PROBE, "import"]
+    cmd = [python, "-P", "-v", "-W", "always::RuntimeWarning", PROBE, "import"]
     try:
         r = subprocess.run(cmd, input=req, capture_output=True, text=True, timeout=timeout,
                            env=child_env(), encoding="utf-8", errors="replace")

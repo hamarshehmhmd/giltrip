@@ -68,15 +68,15 @@ def _online(rep, info):
 
 
 def _emit(rep, args, mode):
-    color = (not args.no_color and args.format == "text" and sys.stdout.isatty()
-             and "NO_COLOR" not in os.environ)
+    color = (not args.no_color and args.format == "text" and "NO_COLOR" not in os.environ
+             and (sys.stdout.isatty() or bool(os.environ.get("FORCE_COLOR"))))
     if args.format == "json":
         render.as_json(rep)
     elif args.format == "markdown":
         sys.stdout.write(render.markdown(rep, mode))
     else:
         render.text(rep, color=color, verbose=args.verbose, mode=mode)
-    render.github(rep, mode)
+    render.github(rep, mode, annotate=args.format != "json")
 
 
 def cmd_scan(args):

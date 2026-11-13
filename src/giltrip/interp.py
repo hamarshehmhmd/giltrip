@@ -16,6 +16,7 @@ class GiltripError(Exception):
 def child_env(extra=None, keep_gil=False):
     env = dict(os.environ)
     env.pop("PYTHONVERBOSE", None)
+    env.pop("PYTHONWARNINGS", None)
     if not keep_gil:
         env.pop("PYTHON_GIL", None)
     env["PYTHONIOENCODING"] = "utf-8"

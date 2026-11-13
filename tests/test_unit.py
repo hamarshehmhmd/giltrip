@@ -32,6 +32,14 @@ def test_parse_log_attributes_each_gil_line_to_the_import_that_caused_it():
     assert r["finished"] and r["gil_end"] is True and r["current"] is None
 
 
+def test_parse_log_reads_the_315_runtime_warning_form():
+    log = ("@@giltrip@@ BEGIN p.a\n<frozen importlib._bootstrap>:491: RuntimeWarning: The global interpreter lock (GIL) "
+           "has been enabled to load module 'p.a', which has not declared that it can run safely without the GIL.\n"
+           "@@giltrip@@ OK p.a\n@@giltrip@@ BEGIN p.b\n# loading module 'p.b', which requires the GIL\n"
+           "@@giltrip@@ OK p.b\n@@giltrip@@ END gil=1\n")
+    assert engine.parse_log(log)["culprits"] == {"p.a": "p.a", "p.b": "p.b"}
+
+
 def test_parse_log_unfinished_run_reports_current_module():
     r = engine.parse_log("@@giltrip@@ BEGIN a\n@@giltrip@@ OK a\n@@giltrip@@ BEGIN b\n")
     assert not r["finished"] and r["current"] == "b"
@@ -143,8 +151,8 @@ def test_user_frame_skips_site_packages(tmp_path):
 
 
 def test_root_for():
-    assert runmod._root_for("a.b.c", "/s/a/b/c.so") == "/s"
-    assert runmod._root_for("mod", "/s/mod.so") == "/s"
+    assert runmod._root_for("a.b.c", "/s/a/b/c.so") == os.path.abspath("/s")
+    assert runmod._root_for("mod", "/s/mod.so") == os.path.abspath("/s")
 
 
 def _rep(culprits):

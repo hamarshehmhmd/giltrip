@@ -65,7 +65,7 @@ def text(rep, color=False, verbose=False, mode="scan", out=None):
                 w("    %s\n" % _c("36", note, color))
             w(_c("2", "    repro: %s\n" % pick_repro(items)["repro"], color))
     if rep["allowed"]:
-        w("\nallowed by config (%d): %s\n" % (len(rep["allowed"]), ", ".join(c["module"] for c in rep["allowed"])))
+        w("\nallowed (%d): %s\n" % (len(rep["allowed"]), ", ".join(c["module"] for c in rep["allowed"])))
     if rep["errors"]:
         w("\ncould not import %d module%s%s\n" % (len(rep["errors"]), "" if len(rep["errors"]) == 1 else "s",
                                                  ":" if verbose else " (use -v to list)"))
@@ -92,8 +92,8 @@ def markdown(rep, mode="scan"):
     if not cul:
         lines.append("No extension module re-enables the GIL (%d checked)." % rep["checked"])
     else:
-        lines += ["**%d module%s re-enable the GIL** (%d checked):" % (
-            len(cul), "" if len(cul) == 1 else "s", rep["checked"]), "",
+        lines += ["**%d module%s the GIL** (%d checked):" % (
+            len(cul), " re-enables" if len(cul) == 1 else "s re-enable", rep["checked"]), "",
             "| distribution | version | module | how it got in | source |", "|---|---|---|---|---|"]
         for c in cul:
             how = c.get("imported_at") or (("via `import %s`" % c["triggered_by"]) if c.get("triggered_by") else "")
@@ -101,17 +101,17 @@ def markdown(rep, mode="scan"):
                                                        how.replace("|", "\\|"), c["source"]))
         lines += ["", "Reproduce one: `%s`" % pick_repro(cul)["repro"]]
     if rep["allowed"]:
-        lines += ["", "Allowed by config: " + ", ".join("`%s`" % c["module"] for c in rep["allowed"])]
+        lines += ["", "Allowed: " + ", ".join("`%s`" % c["module"] for c in rep["allowed"])]
     return "\n".join(lines) + "\n"
 
 
-def github(rep, mode="scan"):
+def github(rep, mode="scan", annotate=True):
     """Step summary + annotations when running in GitHub Actions."""
     summ = os.environ.get("GITHUB_STEP_SUMMARY")
     if summ:
         with open(summ, "a", encoding="utf-8") as fh:
             fh.write(markdown(rep, mode) + "\n")
-    if os.environ.get("GITHUB_ACTIONS") == "true":
+    if annotate and os.environ.get("GITHUB_ACTIONS") == "true":
         for c in rep["culprits"]:
             sys.stdout.write("::warning title=GIL re-enabled::%s (%s %s) re-enables the GIL on %s\n" % (
                 c["module"], c["dist"] or "?", c["version"] or "", rep["python"].get("abi_tag", "")))
