@@ -74,8 +74,8 @@ SCENES = [
     },
     {
         "kind": "term",
-        "cmds": ["giltrip run -- python -m pytest -q" + NOWARN + " 2>/dev/null | tail -n 19 | head -n 15"],
-        "show": ["giltrip run -- python -m pytest -q"],
+        "cmds": ["giltrip run -- python -m pytest -q --disable-warnings" + NOWARN + " | head -n 20"],
+        "show": ["giltrip run -- python -m pytest -q --disable-warnings"],
         "say": ("gil trip run watches a real command, like your test suite. It reports the module that turned the "
                 "GIL on, plus L X M L, which was imported later and would have done it by itself. And it points at "
                 "your code: feeds dot p y line five, and metrics dot p y line one."),
@@ -109,7 +109,8 @@ SCENES = [
         "kind": "bullets",
         "title": "Try it",
         "bullets": [
-            "curl -fsSL https://raw.githubusercontent.com/hamarshehmhmd/giltrip/main/install.sh | sh",
+            "curl -fsSL https://raw.githubusercontent.com/hamarshehmhmd/",
+            "   giltrip/main/install.sh | sh",
             "giltrip scan --python .venv      giltrip run --fail -- pytest",
             "uses: hamarshehmhmd/giltrip@v0.1.0",
             "github.com/hamarshehmhmd/giltrip",

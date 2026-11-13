@@ -11,7 +11,7 @@ It finds *every* extension module that re-enables the GIL (not just the first on
 
 ![giltrip demo](docs/demo.gif)
 
-> Narrated 2-minute demo video: see the [v0.1.0 release](https://github.com/hamarshehmhmd/giltrip/releases/tag/v0.1.0) (`demo.mp4`).
+> Narrated 2.5-minute demo video: see the [v0.1.0 release](https://github.com/hamarshehmhmd/giltrip/releases/tag/v0.1.0) (`demo.mp4`).
 
 ## Why
 
